@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "nodenormalizer": {
+      "command": "uv",
+      "args": ["run", "--directory", "/Users/bizon/Projects/experiments/RoboMCP/nodenormalizer-mcp", "python", "run_server.py"]
+    }
+  }
+}
