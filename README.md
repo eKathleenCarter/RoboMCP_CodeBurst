@@ -46,29 +46,33 @@ Provides access to the ROBOKOP Knowledge Graph for querying biomedical relations
 
 Each MCP server is published as an independent package on PyPI.
 
-### Install from PyPI
+### Recommended: Use with uvx
+
+No installation needed! Use `uvx` to run the servers in isolated environments (see Configuration section below).
+
+### Install in a Virtual Environment
+
+If you prefer to install the packages:
 
 ```bash
-# Install name-resolver-mcp
+# Create and activate a virtual environment
+python -m venv mcp-env
+source mcp-env/bin/activate  # On Windows: mcp-env\Scripts\activate
+
+# Install desired servers
 pip install name-resolver-mcp
-
-# Install nodenormalizer-mcp
 pip install nodenormalizer-mcp
-
-# Install robokop-mcp
 pip install robokop-mcp
 ```
 
-### Install from Source
-
-If you want to install from source for development:
+### Install from Source for Development
 
 ```bash
 # Clone the repository
 git clone https://github.com/cbizon/RoboMCP.git
 cd RoboMCP
 
-# Install a specific server
+# Install a specific server in editable mode
 cd name-resolver-mcp
 pip install -e .
 ```
@@ -90,21 +94,73 @@ Add the servers to your Claude Desktop configuration file:
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
 
+#### Using uvx (Recommended)
+
+The easiest way to use these servers is with `uvx`, which runs them in isolated environments without installation:
+
 ```json
 {
   "mcpServers": {
     "name-resolver": {
-      "command": "name-resolver-mcp"
+      "command": "uvx",
+      "args": ["name-resolver-mcp"]
     },
     "nodenormalizer": {
-      "command": "nodenormalizer-mcp"
+      "command": "uvx",
+      "args": ["nodenormalizer-mcp"]
     },
     "robokop": {
-      "command": "robokop-mcp"
+      "command": "uvx",
+      "args": ["robokop-mcp"]
     }
   }
 }
 ```
+
+#### For Local Development
+
+When running from source, use the full uv command:
+
+```json
+{
+  "mcpServers": {
+    "name-resolver": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/absolute/path/to/RoboMCP/name-resolver-mcp",
+        "python",
+        "run_server.py"
+      ]
+    },
+    "nodenormalizer": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/absolute/path/to/RoboMCP/nodenormalizer-mcp",
+        "python",
+        "run_server.py"
+      ]
+    },
+    "robokop": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/absolute/path/to/RoboMCP/robokop-mcp",
+        "python",
+        "run_server.py"
+      ]
+    }
+  }
+}
+```
+
+**Note**: Replace `/absolute/path/to/RoboMCP` with your actual path.
+
+#### Custom API Endpoints
 
 To use custom API endpoints, add environment variables:
 
