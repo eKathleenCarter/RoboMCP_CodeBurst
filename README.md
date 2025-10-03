@@ -33,34 +33,57 @@ Provides biological entity CURIE normalization and conflation.
   - Optional drug/chemical conflation
   - Returns descriptions and type information
 
+### ROBOKOP MCP
+Provides access to the ROBOKOP Knowledge Graph for querying biomedical relationships.
+
+**Tools:**
+- `get_node` - Get information about a specific node by CURIE
+- `get_edges` - Get edges connected to a node with optional filtering
+- `get_edge_summary` - Get a summary of edge types connected to a node
+- `get_edges_between` - Find all edges connecting two nodes
+
 ## Installation
 
-### Prerequisites
-- Python 3.10 or higher
-- [uv](https://github.com/astral-sh/uv) package manager
+Each MCP server is published as an independent package on PyPI.
 
-### Install uv
+### Install from PyPI
+
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install name-resolver-mcp
+pip install name-resolver-mcp
+
+# Install nodenormalizer-mcp
+pip install nodenormalizer-mcp
+
+# Install robokop-mcp
+pip install robokop-mcp
 ```
 
-### Install a Server
+### Install from Source
 
-Each server can be installed independently:
+If you want to install from source for development:
 
 ```bash
-# Name Resolver
+# Clone the repository
+git clone https://github.com/cbizon/RoboMCP.git
+cd RoboMCP
+
+# Install a specific server
 cd name-resolver-mcp
-uv sync
-
-# Node Normalizer
-cd nodenormalizer-mcp
-uv sync
+pip install -e .
 ```
 
-## Usage with Claude Desktop
+## Configuration
 
-### Configure Claude Desktop
+### Environment Variables
+
+Each server can be configured using environment variables to point to different API endpoints:
+
+- `NAME_RESOLVER_URL` - Name Resolution Service endpoint (default: `https://name-resolution-sri.renci.org`)
+- `NODE_NORMALIZER_URL` - Node Normalization Service endpoint (default: `https://nodenormalization-sri.renci.org`)
+- `ROBOKOP_URL` - ROBOKOP Knowledge Graph endpoint (default: `https://automat.renci.org/robokopkg`)
+
+### Claude Desktop Configuration
 
 Add the servers to your Claude Desktop configuration file:
 
@@ -71,30 +94,32 @@ Add the servers to your Claude Desktop configuration file:
 {
   "mcpServers": {
     "name-resolver": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory",
-        "/absolute/path/to/RoboMCP/name-resolver-mcp",
-        "python",
-        "run_server.py"
-      ]
+      "command": "name-resolver-mcp"
     },
     "nodenormalizer": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory",
-        "/absolute/path/to/RoboMCP/nodenormalizer-mcp",
-        "python",
-        "run_server.py"
-      ]
+      "command": "nodenormalizer-mcp"
+    },
+    "robokop": {
+      "command": "robokop-mcp"
     }
   }
 }
 ```
 
-**Important**: Replace `/absolute/path/to/RoboMCP` with the actual absolute path to your RoboMCP directory.
+To use custom API endpoints, add environment variables:
+
+```json
+{
+  "mcpServers": {
+    "name-resolver": {
+      "command": "name-resolver-mcp",
+      "env": {
+        "NAME_RESOLVER_URL": "https://your-custom-endpoint.example.com"
+      }
+    }
+  }
+}
+```
 
 ### Restart Claude Desktop
 
@@ -114,23 +139,13 @@ Once configured, you can ask Claude questions like:
 - "What are the equivalent identifiers for CHEBI:5931?"
 - "Normalize UniProtKB:P04637 with gene/protein conflation enabled"
 
-## API Endpoints
-
-These servers connect to:
-- **Name Resolver**: https://name-resolution-sri-dev.apps.renci.org
-- **Node Normalizer**: https://nodenormalization-sri.renci.org
-
 ## Development
 
-See [CLAUDE.md](CLAUDE.md) for development instructions.
+See [CLAUDE.md](CLAUDE.md) for development instructions and guidelines.
 
 ## License
 
-[Add license information]
-
-## Contributing
-
-[Add contribution guidelines]
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 

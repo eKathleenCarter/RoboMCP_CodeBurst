@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import httpx
 from fastmcp import FastMCP
 
@@ -8,7 +9,7 @@ mcp = FastMCP("robokop", version="0.1.0")
 
 # Create HTTP client for API calls with longer timeout for large queries
 httpx_client = httpx.AsyncClient(timeout=60.0)
-BASE_URL = "https://automat.renci.org/robokopkg"
+BASE_URL = os.getenv("ROBOKOP_URL", "https://automat.renci.org/robokopkg")
 
 
 def format_edge(edge_wrapper: dict, query_curie: str, index: int) -> str:

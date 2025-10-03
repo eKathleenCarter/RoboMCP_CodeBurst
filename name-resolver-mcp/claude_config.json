@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "name-resolver": {
-      "command": "uv",
-      "args": ["run", "--directory", "/Users/bizon/Projects/experiments/RoboMCP/name-resolver-mcp", "python", "run_server.py"]
-    }
-  }
-}

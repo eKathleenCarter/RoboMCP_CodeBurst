@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import httpx
 from fastmcp import FastMCP
 
@@ -8,7 +9,7 @@ mcp = FastMCP("nodenormalizer", version="0.1.0")
 
 # Create HTTP client for API calls
 httpx_client = httpx.AsyncClient()
-BASE_URL = "https://nodenormalization-sri.renci.org"
+BASE_URL = os.getenv("NODE_NORMALIZER_URL", "https://nodenormalization-sri.renci.org")
 
 
 @mcp.tool()

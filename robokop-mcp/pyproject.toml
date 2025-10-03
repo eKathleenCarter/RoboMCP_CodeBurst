@@ -5,13 +5,32 @@ build-backend = "hatchling.build"
 [project]
 name = "robokop-mcp"
 version = "0.1.0"
-description = "MCP server for ROBOKOP Knowledge Graph API"
-authors = [{name = "Claude", email = "claude@anthropic.com"}]
+description = "MCP server for ROBOKOP Knowledge Graph - query biomedical knowledge graph for nodes, edges, and relationships"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Chris Bizon"}]
 requires-python = ">=3.10"
+keywords = ["mcp", "biomedical", "translator", "knowledge-graph", "robokop", "bioinformatics"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
 dependencies = [
     "fastmcp>=0.1.0",
     "httpx>=0.24.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/cbizon/RoboMCP"
+Repository = "https://github.com/cbizon/RoboMCP"
+Issues = "https://github.com/cbizon/RoboMCP/issues"
 
 [project.scripts]
 robokop-mcp = "robokop_mcp.server:main"

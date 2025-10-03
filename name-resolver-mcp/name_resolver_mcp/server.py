@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import httpx
 from fastmcp import FastMCP
 
@@ -8,7 +9,7 @@ mcp = FastMCP("name-resolver", version="0.1.0")
 
 # Create HTTP client for API calls
 httpx_client = httpx.AsyncClient()
-BASE_URL = "https://name-resolution-sri-dev.apps.renci.org"
+BASE_URL = os.getenv("NAME_RESOLVER_URL", "https://name-resolution-sri.renci.org")
 
 
 @mcp.tool()
