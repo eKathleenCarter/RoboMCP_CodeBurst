@@ -28,10 +28,11 @@ Provides biological entity CURIE normalization and conflation.
 **Tools:**
 - `get_normalized_nodes` - Normalize biological entity CURIEs
   - Maps identifiers to canonical forms
-  - Finds equivalent identifiers across namespaces
+  - Shows all equivalent identifiers across namespaces
+  - Displays biolink types and information content
   - Optional gene/protein conflation
   - Optional drug/chemical conflation
-  - Returns descriptions and type information
+  - Optional descriptions
 
 ### ROBOKOP MCP
 Provides access to the ROBOKOP Knowledge Graph for querying biomedical relationships.

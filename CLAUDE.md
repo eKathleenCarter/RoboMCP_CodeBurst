@@ -9,6 +9,7 @@ We are providing a set of MCP servers to various Translator / ROBOKOP tools. Eac
 Each MCP server is in its own subdirectory:
 - `name-resolver-mcp/` - Name Resolution Service API wrapper
 - `nodenormalizer-mcp/` - Node Normalization Service API wrapper
+- `robokop-mcp/` - ROBOKOP Knowledge Graph API wrapper
 
 ## Basic Setup
 
@@ -38,8 +39,28 @@ Each MCP server is in its own subdirectory:
    name = "<server-name>-mcp"
    version = "0.1.0"
    description = "MCP server for <Service Name>"
+   readme = "README.md"
+   license = {text = "MIT"}
+   authors = [{name = "Chris Bizon"}]
    requires-python = ">=3.10"
+   keywords = ["mcp", "biomedical", "translator", "<relevant-keywords>"]
+   classifiers = [
+       "Development Status :: 4 - Beta",
+       "Intended Audience :: Developers",
+       "Intended Audience :: Science/Research",
+       "License :: OSI Approved :: MIT License",
+       "Programming Language :: Python :: 3",
+       "Programming Language :: Python :: 3.10",
+       "Programming Language :: Python :: 3.11",
+       "Programming Language :: Python :: 3.12",
+       "Topic :: Scientific/Engineering :: Bio-Informatics",
+   ]
    dependencies = ["fastmcp>=0.1.0", "httpx>=0.24.0"]
+
+   [project.urls]
+   Homepage = "https://github.com/cbizon/RoboMCP"
+   Repository = "https://github.com/cbizon/RoboMCP"
+   Issues = "https://github.com/cbizon/RoboMCP/issues"
 
    [project.scripts]
    <server-name>-mcp = "<server_name>_mcp.server:main"
@@ -50,11 +71,13 @@ Each MCP server is in its own subdirectory:
 3. Create package directory: `mkdir <server_name>_mcp`
 4. Create `<server_name>_mcp/server.py` using FastMCP:
    ```python
+   import os
    from fastmcp import FastMCP
    import httpx
 
    mcp = FastMCP("<server-name>", version="0.1.0")
    httpx_client = httpx.AsyncClient()
+   BASE_URL = os.getenv("<SERVICE>_URL", "https://default-endpoint.example.com")
 
    @mcp.tool()
    async def my_tool(param: str) -> str:
@@ -66,9 +89,10 @@ Each MCP server is in its own subdirectory:
        mcp.run()
    ```
 5. Create `run_server.py` entry point
-6. Run `uv sync` to install dependencies
-7. Create `claude_config.json` for local testing
-8. Write tests in `tests/` directory
+6. Create `README.md` for the package (see existing packages for template)
+7. Run `uv sync` to install dependencies
+8. Create local `claude_config.json` for testing (not committed to git)
+9. Write tests in `tests/` directory
 
 ### Running a Server Locally
 
