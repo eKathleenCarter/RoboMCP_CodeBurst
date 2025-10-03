@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nodenormalizer-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for Node Normalization Service - normalize and conflate biological entity identifiers"
 readme = "README.md"
 license = {text = "MIT"}
