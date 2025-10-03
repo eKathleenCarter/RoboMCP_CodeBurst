@@ -18,7 +18,8 @@ async def get_normalized_nodes(
     conflate: bool = True,
     drug_chemical_conflate: bool = True,
     description: bool = False,
-    individual_types: bool = False
+    show_types: bool = True,
+    show_information_content: bool = True
 ) -> str:
     """Normalize biological entity CURIEs and apply conflation
 
@@ -27,7 +28,8 @@ async def get_normalized_nodes(
         conflate: Whether to apply gene/protein conflation (default: true)
         drug_chemical_conflate: Whether to apply drug/chemical conflation (default: true)
         description: Whether to return CURIE descriptions when possible (default: false)
-        individual_types: Whether to return individual types for equivalent identifiers (default: false)
+        show_types: Whether to show biolink types (default: true)
+        show_information_content: Whether to show information content (default: true)
     """
     if not curies:
         raise ValueError("No CURIEs provided")
@@ -41,7 +43,7 @@ async def get_normalized_nodes(
         ("conflate", "true" if conflate else "false"),
         ("drug_chemical_conflate", "true" if drug_chemical_conflate else "false"),
         ("description", "true" if description else "false"),
-        ("individual_types", "true" if individual_types else "false")
+        ("individual_types", "false")
     ])
 
     response = await httpx_client.get(
@@ -52,19 +54,7 @@ async def get_normalized_nodes(
     results = response.json()
 
     # Build response text
-    settings_info = []
-    if conflate:
-        settings_info.append("gene/protein conflation: ON")
-    if drug_chemical_conflate:
-        settings_info.append("drug/chemical conflation: ON")
-    if description:
-        settings_info.append("descriptions: ON")
-    if individual_types:
-        settings_info.append("individual types: ON")
-
-    settings_text = f" ({'; '.join(settings_info)})" if settings_info else ""
-
-    text = f"Normalized {len(curies)} CURIE(s){settings_text}:\n\n"
+    text = f"Normalized {len(curies)} CURIE(s):\n\n"
 
     for curie in curies:
         if curie in results:
@@ -82,33 +72,34 @@ async def get_normalized_nodes(
                 text += f" ({label})"
             text += "\n"
 
+            # Show biolink type if requested
+            if show_types:
+                type_info = node_data.get("type", [])
+                if type_info:
+                    if isinstance(type_info, list):
+                        type_str = ", ".join(type_info)
+                    else:
+                        type_str = type_info
+                    text += f"   Type: {type_str}\n"
+
+            # Show information content if requested and available
+            if show_information_content:
+                info_content = node_data.get("information_content")
+                if info_content is not None:
+                    text += f"   Information Content: {info_content}\n"
+
             # Show description if requested and available
             if description and "description" in node_data.get("id", {}):
                 desc = node_data["id"]["description"]
                 if desc:
                     text += f"   Description: {desc}\n"
 
-            # Show equivalent identifiers
+            # Show ALL equivalent identifiers
             equivalent_ids = node_data.get("equivalent_identifiers", [])
             if equivalent_ids and len(equivalent_ids) > 1:
                 other_ids = [eq["identifier"] for eq in equivalent_ids if eq["identifier"] != normalized_id]
                 if other_ids:
-                    text += f"   Equivalent IDs: {', '.join(other_ids[:5])}"
-                    if len(other_ids) > 5:
-                        text += f" (+{len(other_ids)-5} more)"
-                    text += "\n"
-
-            # Show individual types if requested
-            if individual_types and equivalent_ids:
-                types_found = set()
-                for eq in equivalent_ids:
-                    if "type" in eq:
-                        if isinstance(eq["type"], list):
-                            types_found.update(eq["type"])
-                        else:
-                            types_found.add(eq["type"])
-                if types_found:
-                    text += f"   Types: {', '.join(sorted(types_found))}\n"
+                    text += f"   Equivalent IDs ({len(other_ids)}): {', '.join(other_ids)}\n"
 
             text += "\n"
         else:
