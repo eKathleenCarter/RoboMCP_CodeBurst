@@ -34,6 +34,21 @@ Provides biological entity CURIE normalization and conflation.
   - Optional drug/chemical conflation
   - Optional descriptions
 
+### Biolink MCP
+Provides access to the Biolink Model Toolkit for querying and navigating the Biolink Model.
+
+**Tools:**
+- `get_element` - Get a Biolink Model element by name
+- `get_ancestors` - Get ancestors of a Biolink element
+- `get_descendants` - Get descendants of a Biolink element
+- `get_all_classes` - Get all Biolink classes
+- `get_all_slots` - Get all Biolink slots
+- `get_all_entities` - Get all Biolink entities
+- `get_element_by_mapping` - Map external CURIEs to Biolink elements
+- `is_predicate` - Check if a name is a Biolink predicate
+- `get_slot_domain` - Get the domain for a Biolink slot
+- `get_slot_range` - Get the range for a Biolink slot
+
 ### ROBOKOP MCP
 Provides access to the ROBOKOP Knowledge Graph for querying biomedical relationships.
 
@@ -63,6 +78,7 @@ source mcp-env/bin/activate  # On Windows: mcp-env\Scripts\activate
 # Install desired servers
 pip install name-resolver-mcp
 pip install nodenormalizer-mcp
+pip install biolink-mcp
 pip install robokop-mcp
 ```
 
@@ -86,6 +102,7 @@ Each server can be configured using environment variables to point to different 
 
 - `NAME_RESOLVER_URL` - Name Resolution Service endpoint (default: `https://name-resolution-sri.renci.org`)
 - `NODE_NORMALIZER_URL` - Node Normalization Service endpoint (default: `https://nodenormalization-sri.renci.org`)
+- `BIOLINK_VERSION` - Biolink Model version (optional, defaults to latest)
 - `ROBOKOP_URL` - ROBOKOP Knowledge Graph endpoint (default: `https://automat.renci.org/robokopkg`)
 
 ### Claude Desktop Configuration
@@ -109,6 +126,10 @@ The easiest way to use these servers is with `uvx`, which runs them in isolated 
     "nodenormalizer": {
       "command": "uvx",
       "args": ["nodenormalizer-mcp"]
+    },
+    "biolink": {
+      "command": "uvx",
+      "args": ["biolink-mcp"]
     },
     "robokop": {
       "command": "uvx",
@@ -141,6 +162,16 @@ When running from source, use the full uv command:
         "run",
         "--directory",
         "/absolute/path/to/RoboMCP/nodenormalizer-mcp",
+        "python",
+        "run_server.py"
+      ]
+    },
+    "biolink": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/absolute/path/to/RoboMCP/biolink-mcp",
         "python",
         "run_server.py"
       ]
