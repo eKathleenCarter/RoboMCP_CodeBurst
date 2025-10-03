@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "robokop": {
+      "command": "uv",
+      "args": ["run", "--directory", "/Users/bizon/Projects/experiments/RoboMCP/robokop-mcp", "python", "run_server.py"]
+    }
+  }
+}
