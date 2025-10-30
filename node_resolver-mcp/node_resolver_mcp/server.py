@@ -5,6 +5,8 @@ import httpx
 from typing import List
 from fastmcp import FastMCP
 from bmt import Toolkit
+import itertools
+from typing import TypedDict
 
 # Create the FastMCP server
 mcp = FastMCP("node-resolver", version="0.1.0")
@@ -18,6 +20,34 @@ NODE_NORMALIZER_URL = os.getenv("NODE_NORMALIZER_URL", "https://nodenormalizatio
 biolink_version = os.getenv("BIOLINK_VERSION")
 toolkit = Toolkit(biolink_version) if biolink_version else Toolkit()
 
+class NodeProperty(TypedDict):
+    property: str
+    type: str
+    description: str
+@mcp.tool()
+def get_node_properties_for_class(class_name: str) -> List[NodeProperty]:
+    ancestors = toolkit.get_ancestors(class_name)
+
+    all_slots = toolkit.get_all_slots()
+    slots_without_domain = [s for s in all_slots if len(toolkit.get_slot_domain(s)) == 0 and toolkit.is_node_property(s)]
+
+    slots_nested = [toolkit.get_all_slots_with_class_domain(a) for a in ancestors]
+    slots_from_class = set(s for sl in slots_nested for s in sl)
+
+    slots_with_domain = [s for s in slots_from_class if toolkit.is_node_property(s)]
+
+    output = []
+    for s in itertools.chain(slots_with_domain, slots_without_domain):
+        value_type = toolkit.get_value_type_for_slot(s)
+        type = toolkit.view.get_type(value_type)
+        primative_type = type.typeof or value_type
+
+        output.append({
+            "property": s,
+            "type": primative_type,
+            "description": type.description,
+        })
+    return output
 
 @mcp.tool()
 async def find_most_specific_type_for_entity(
