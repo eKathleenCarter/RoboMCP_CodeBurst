@@ -25,46 +25,31 @@ async def find_most_specific_type_for_term(search_term: str, limit: int = 5):
 
     # Step 1: Use Name Resolver to find CURIEs
     print(f"\n📍 STEP 1: Searching for '{search_term}' in Name Resolver...")
-    lookup_result = await lookup.fn(query=search_term, limit=limit)
-    print(lookup_result)
 
-    # Parse CURIEs from the lookup result (this is a formatted string)
-    # In a real MCP client, you'd parse the structured response
-    # For this example, we'll manually extract from known results
+    # Get formatted output for display
+    lookup_display = await lookup.fn(query=search_term, limit=limit)
+    print(lookup_display)
 
-    # Let's get the raw JSON to extract CURIEs properly
-    import httpx
-    httpx_client = httpx.AsyncClient()
-    response = await httpx_client.get(
-        "https://name-resolution-sri.renci.org/lookup",
-        params=[("string", search_term), ("limit", str(limit))]
-    )
-    results = response.json()
+    # Get JSON output for processing
+    lookup_results = await lookup.fn(query=search_term, limit=limit, return_json=True)
 
-    if not results:
+    if not lookup_results:
         print(f"❌ No results found for '{search_term}'")
         return
 
     # Extract CURIEs
-    curies = [result.get("curie") for result in results if result.get("curie")]
-    print(f"\n✅ Found {len(curies)} CURIEs: {curies[:3]}...")
+    curies = [result.get("curie") for result in lookup_results if result.get("curie")]
+    print(f"\n✅ Found {len(curies)} CURIEs: {curies}")
 
     # Step 2: Use Node Normalizer to get types for each CURIE
     print(f"\n📍 STEP 2: Normalizing CURIEs to get Biolink types...")
-    norm_result = await get_normalized_nodes.fn(
-        curies=curies,
-        show_types=True
-    )
-    print(norm_result)
 
-    # Extract types from normalized results
-    # Parse the formatted string to get types
-    # In a real scenario, you'd get the structured data
-    response = await httpx_client.get(
-        "https://nodenormalization-sri.renci.org/get_normalized_nodes",
-        params=[("curie", curie) for curie in curies]
-    )
-    norm_data = response.json()
+    # Get formatted output for display
+    norm_display = await get_normalized_nodes.fn(curies=curies, show_types=True)
+    print(norm_display)
+
+    # Get JSON output for processing
+    norm_data = await get_normalized_nodes.fn(curies=curies, return_json=True)
 
     # Collect all types from all CURIEs
     all_types = []
@@ -78,7 +63,7 @@ async def find_most_specific_type_for_term(search_term: str, limit: int = 5):
                 else:
                     all_types.append(types)
 
-    # Remove duplicates and clean up formatting
+    # Remove duplicates
     unique_types = list(set(all_types))
 
     print(f"\n✅ Found {len(unique_types)} unique Biolink types: {unique_types}")

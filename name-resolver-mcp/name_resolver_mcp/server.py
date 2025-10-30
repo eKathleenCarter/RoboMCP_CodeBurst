@@ -22,8 +22,9 @@ async def lookup(
     biolink_type: str | None = None,
     only_prefixes: list[str] | None = None,
     exclude_prefixes: list[str] | None = None,
-    only_taxa: list[str] | None = None
-) -> str:
+    only_taxa: list[str] | None = None,
+    return_json: bool = False
+) -> str | list[dict]:
     """Search for biological entities by name with filtering options
 
     Args:
@@ -36,6 +37,7 @@ async def lookup(
         only_prefixes: Only include results from these namespaces (e.g., ['MONDO', 'CHEBI', 'HGNC'])
         exclude_prefixes: Exclude results from these namespaces
         only_taxa: Only include results from these taxa (e.g., ['NCBITaxon:9606'] for humans)
+        return_json: Return raw JSON instead of formatted string (default: false)
     """
     # Build parameters
     params = [
@@ -64,6 +66,10 @@ async def lookup(
     )
     response.raise_for_status()
     results = response.json()
+
+    # Return raw JSON if requested
+    if return_json:
+        return results
 
     # Build response text
     filter_info = []
@@ -106,11 +112,12 @@ async def lookup(
 
 
 @mcp.tool()
-async def synonyms(curies: list[str]) -> str:
+async def synonyms(curies: list[str], return_json: bool = False) -> str | dict:
     """Get synonyms for biological entity CURIEs
 
     Args:
         curies: List of CURIEs to get synonyms for (e.g., ['CHEBI:5931', 'MONDO:0007739'])
+        return_json: Return raw JSON instead of formatted string (default: false)
     """
     if not curies:
         raise ValueError("No CURIEs provided")
@@ -126,6 +133,10 @@ async def synonyms(curies: list[str]) -> str:
     )
     response.raise_for_status()
     results = response.json()
+
+    # Return raw JSON if requested
+    if return_json:
+        return results
 
     text = f"Synonyms for {len(curies)} CURIE(s):\n\n"
     for curie in curies:
