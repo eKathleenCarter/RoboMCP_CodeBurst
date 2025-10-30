@@ -15,18 +15,39 @@ uvx node-resolver-mcp
 
 ## Tools
 
-- `find_most_specific_type_for_entity` - Find the most specific Biolink type(s) for a biological entity by orchestrating name resolution, normalization, and type hierarchy analysis
+### High-Level Orchestration
+
+- **`find_most_specific_type_for_entity`** - Find the most specific Biolink type(s) for a biological entity by orchestrating all three steps below
+
+### Individual Step Tools
+
+- **`resolve_entity_to_curies`** - Resolve a biological entity name to CURIEs (Step 1)
+- **`get_types_for_curies`** - Get Biolink types for a list of CURIEs (Step 2)
+- **`find_most_specific_types`** - Find the most specific types from a list of Biolink types (Step 3)
+
+### Additional Tools
+
+- **`get_node_properties_for_class`** - Get all node properties for a Biolink class
 
 ### Example Usage
 
 ```python
-# Find the most specific type for "diabetes"
+# High-level: Find the most specific type in one call
 find_most_specific_type_for_entity("diabetes")
 # Returns: ['biolink:Disease']
 
-# Find the most specific type for a gene
-find_most_specific_type_for_entity("BRCA1")
-# Returns: ['biolink:Gene']
+# Or use individual steps:
+# Step 1: Get CURIEs
+curies = resolve_entity_to_curies("diabetes")
+# Returns: ['MONDO:0005148', 'MESH:D003920', ...]
+
+# Step 2: Get types
+types = get_types_for_curies(curies)
+# Returns: ['biolink:Disease', 'biolink:NamedThing']
+
+# Step 3: Find most specific
+most_specific = find_most_specific_types(types)
+# Returns: ['biolink:Disease']
 ```
 
 ## How It Works

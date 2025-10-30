@@ -50,36 +50,23 @@ def get_node_properties_for_class(class_name: str) -> List[NodeProperty]:
     return output
 
 @mcp.tool()
-async def find_most_specific_type_for_entity(
+async def resolve_entity_to_curies(
     entity: str,
     limit: int = 5,
     biolink_type: str | None = None,
     only_prefixes: list[str] | None = None
 ) -> List[str]:
-    """Find the most specific Biolink type(s) for a biological entity
-
-    This tool orchestrates three steps:
-    1. Name Resolution - Search for the entity and get CURIEs
-    2. Node Normalization - Get Biolink types for those CURIEs
-    3. Type Filtering - Find the most specific types in the hierarchy
+    """Resolve a biological entity name to CURIEs using the Name Resolution Service
 
     Args:
         entity: Biological entity name (e.g., "diabetes", "BRCA1", "aspirin")
-        limit: Number of name resolution results to consider (default: 5)
-        biolink_type: Filter by Biolink entity type during name resolution
+        limit: Number of results to return (default: 5)
+        biolink_type: Filter by Biolink entity type (e.g., 'Disease', 'Gene')
         only_prefixes: Only include results from these namespaces (e.g., ['MONDO', 'HGNC'])
 
     Returns:
-        List of most specific Biolink type(s) for the entity
-
-    Examples:
-        >>> find_most_specific_type_for_entity("diabetes")
-        ['biolink:Disease']
-
-        >>> find_most_specific_type_for_entity("BRCA1")
-        ['biolink:Gene']
+        List of CURIEs for the entity
     """
-    # Step 1: Name Resolution - Get CURIEs
     params = [
         ("string", entity),
         ("limit", str(limit)),
@@ -101,15 +88,26 @@ async def find_most_specific_type_for_entity(
     lookup_results = response.json()
 
     if not lookup_results:
-        return ['biolink:NamedThing']
+        return []
 
     # Extract CURIEs
     curies = [result.get("curie") for result in lookup_results if result.get("curie")]
+    return curies
 
+
+@mcp.tool()
+async def get_types_for_curies(curies: List[str]) -> List[str]:
+    """Get Biolink types for a list of CURIEs using the Node Normalization Service
+
+    Args:
+        curies: List of CURIEs (e.g., ['MONDO:0005148', 'HGNC:1100'])
+
+    Returns:
+        List of unique Biolink types for the CURIEs
+    """
     if not curies:
-        return ['biolink:NamedThing']
+        return []
 
-    # Step 2: Node Normalization - Get Biolink types
     norm_params = []
     for curie in curies:
         norm_params.append(("curie", curie))
@@ -141,27 +139,89 @@ async def find_most_specific_type_for_entity(
 
     # Remove duplicates
     unique_types = list(set(all_types))
+    return unique_types
 
-    if not unique_types:
+
+@mcp.tool()
+def find_most_specific_types(types: List[str]) -> List[str]:
+    """Find the most specific Biolink types from a list using the Biolink Model Toolkit
+
+    Given a list of Biolink types, returns only the most specific ones by filtering
+    out any that are ancestors of other types in the list.
+
+    Args:
+        types: List of Biolink types (e.g., ['biolink:Disease', 'biolink:NamedThing'])
+
+    Returns:
+        List of most specific Biolink types, sorted alphabetically
+    """
+    if not types:
         return ['biolink:NamedThing']
 
-    # Step 3: Find most specific types using BMT
     most_specific = []
-    for biolink_type in unique_types:
+    for biolink_type in types:
         is_most_specific = True
-        for other in unique_types:
+        for other in types:
             if other != biolink_type:
                 # Get ancestors with reflexive=True (includes the type itself)
                 ancestors = toolkit.get_ancestors(other, reflexive=True, formatted=True, mixin=True)
-                if ancestors and f"biolink:{biolink_type}" in ancestors:
+                if ancestors and biolink_type in ancestors:
                     # biolink_type is an ancestor of other, so it's not most specific
                     is_most_specific = False
                     break
         if is_most_specific:
-            most_specific.append(f"biolink:{biolink_type}")
+            most_specific.append(biolink_type)
 
     # Return sorted list, or last type if none found
-    return sorted(most_specific) if most_specific else [unique_types[-1]]
+    return sorted(most_specific) if most_specific else [types[-1]]
+
+
+@mcp.tool()
+async def find_most_specific_type_for_entity(
+    entity: str,
+    limit: int = 5,
+    biolink_type: str | None = None,
+    only_prefixes: list[str] | None = None
+) -> List[str]:
+    """Find the most specific Biolink type(s) for a biological entity
+
+    This tool orchestrates three steps:
+    1. Name Resolution - Search for the entity and get CURIEs
+    2. Node Normalization - Get Biolink types for those CURIEs
+    3. Type Filtering - Find the most specific types in the hierarchy
+
+    Args:
+        entity: Biological entity name (e.g., "diabetes", "BRCA1", "aspirin")
+        limit: Number of name resolution results to consider (default: 5)
+        biolink_type: Filter by Biolink entity type during name resolution
+        only_prefixes: Only include results from these namespaces (e.g., ['MONDO', 'HGNC'])
+
+    Returns:
+        List of most specific Biolink type(s) for the entity
+
+    Examples:
+        >>> find_most_specific_type_for_entity("diabetes")
+        ['biolink:Disease']
+
+        >>> find_most_specific_type_for_entity("BRCA1")
+        ['biolink:Gene']
+    """
+    # Step 1: Resolve entity to CURIEs
+    curies = await resolve_entity_to_curies.fn(entity, limit, biolink_type, only_prefixes)
+
+    if not curies:
+        return ['biolink:NamedThing']
+
+    # Step 2: Get Biolink types for CURIEs
+    types = await get_types_for_curies.fn(curies)
+
+    if not types:
+        return ['biolink:NamedThing']
+
+    # Step 3: Find most specific types
+    most_specific = find_most_specific_types.fn(types)
+
+    return most_specific
 
 
 def main():
