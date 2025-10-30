@@ -20,12 +20,12 @@ NODE_NORMALIZER_URL = os.getenv("NODE_NORMALIZER_URL", "https://nodenormalizatio
 biolink_version = os.getenv("BIOLINK_VERSION")
 toolkit = Toolkit(biolink_version) if biolink_version else Toolkit()
 
-class NodeProperty(TypedDict):
-    property: str
-    type: str
-    description: str
+# class NodeProperty(TypedDict):
+#     property: str
+#     type: str
+#     description: str
 @mcp.tool()
-def get_node_properties_for_class(class_name: str) -> List[NodeProperty]:
+def get_node_properties_for_class(class_name: str):
     ancestors = toolkit.get_ancestors(class_name)
 
     all_slots = toolkit.get_all_slots()
@@ -222,6 +222,147 @@ async def find_most_specific_type_for_entity(
     most_specific = find_most_specific_types.fn(types)
 
     return most_specific
+
+
+@mcp.tool()
+async def enrich_node_from_row(
+    row_data: dict,
+    name_column: str = "name",
+    limit: int = 1,
+    biolink_type: str | None = None,
+    only_prefixes: list[str] | None = None
+) -> dict:
+    """Enrich a node from a CSV row by mapping available data to valid Biolink properties
+
+    This tool performs a complete workflow:
+    1. Extract entity name from the row
+    2. Resolve name to CURIE
+    3. Determine most specific Biolink type
+    4. Get valid properties for that type
+    5. Map CSV columns to those properties where data exists
+
+    Args:
+        row_data: Dictionary representing a CSV row (column_name: value)
+        name_column: Name of the column containing the entity name (default: "name")
+        limit: Number of CURIE candidates to consider (default: 1)
+        biolink_type: Filter by Biolink entity type during name resolution
+        only_prefixes: Only include results from these namespaces
+
+    Returns:
+        Dictionary with:
+        - entity: Original entity name
+        - curie: Best matching CURIE
+        - type: Most specific Biolink type
+        - properties: Valid properties for this type
+        - mapped_data: CSV columns mapped to properties with values
+
+    Examples:
+        >>> row = {"name": "aspirin", "Description": "pain reliever", "CAS ID": "50-78-2"}
+        >>> enrich_node_from_row(row)
+        {
+            "entity": "aspirin",
+            "curie": "CHEBI:15365",
+            "type": "biolink:SmallMolecule",
+            "properties": [...],
+            "mapped_data": {
+                "description": {"csv_column": "Description", "value": "pain reliever"},
+                "has_identifier": {"csv_column": "CAS ID", "value": "50-78-2"}
+            }
+        }
+    """
+    # Step 1: Extract entity name
+    entity = row_data.get(name_column)
+    if not entity:
+        return {
+            "error": f"No value found in column '{name_column}'",
+            "row_data": row_data
+        }
+
+    # Step 2: Resolve entity to CURIEs
+    curies = await resolve_entity_to_curies.fn(entity, limit, biolink_type, only_prefixes)
+
+    if not curies:
+        return {
+            "entity": entity,
+            "curie": None,
+            "type": "biolink:NamedThing",
+            "properties": [],
+            "mapped_data": {},
+            "error": "No CURIEs found"
+        }
+
+    # Use the first (best) CURIE
+    best_curie = curies[0]
+
+    # Step 3: Get Biolink types and find most specific
+    types = await get_types_for_curies.fn([best_curie])
+
+    if not types:
+        return {
+            "entity": entity,
+            "curie": best_curie,
+            "type": "biolink:NamedThing",
+            "properties": [],
+            "mapped_data": {},
+            "error": "No types found"
+        }
+
+    most_specific = find_most_specific_types.fn(types)
+    best_type = most_specific[0] if most_specific else "biolink:NamedThing"
+
+    # Step 4: Get properties for this type
+    clean_type = best_type.replace("biolink:", "")
+    properties = get_node_properties_for_class.fn(clean_type)
+
+    # Step 5: Map CSV columns to properties
+    mapped_data = {}
+    property_names = [prop["property"] for prop in properties]
+
+    # Try to map CSV columns to property names
+    for csv_column, value in row_data.items():
+        # Skip the name column and empty values
+        if csv_column == name_column or not value or value == "":
+            continue
+
+        # Normalize column name for matching (lowercase, replace spaces with underscores)
+        normalized_column = csv_column.lower().replace(" ", "_").replace("-", "_")
+
+        # Direct match
+        if normalized_column in property_names:
+            mapped_data[normalized_column] = {
+                "csv_column": csv_column,
+                "value": value,
+                "property_type": next((p["type"] for p in properties if p["property"] == normalized_column), "unknown")
+            }
+        # Partial/fuzzy matching for common patterns
+        else:
+            # Description column
+            if "description" in normalized_column and "description" in property_names:
+                mapped_data["description"] = {
+                    "csv_column": csv_column,
+                    "value": value,
+                    "property_type": next((p["type"] for p in properties if p["property"] == "description"), "unknown")
+                }
+            # ID columns might map to has_identifier or xref
+            elif "id" in normalized_column or "identifier" in normalized_column:
+                if "xref" in property_names:
+                    mapped_data.setdefault("xref", [])
+                    mapped_data["xref"].append({
+                        "csv_column": csv_column,
+                        "value": value,
+                        "property_type": "string"
+                    })
+
+    return {
+        "entity": entity,
+        "curie": best_curie,
+        "type": best_type,
+        "all_curies": curies,
+        "all_types": types,
+        "valid_properties": properties,
+        "mapped_data": mapped_data,
+        "unmapped_columns": [col for col in row_data.keys() if col != name_column and col not in [m.get("csv_column") for m in (mapped_data.values() if isinstance(mapped_data, dict) else [])]]
+    }
 
 
 def main():
