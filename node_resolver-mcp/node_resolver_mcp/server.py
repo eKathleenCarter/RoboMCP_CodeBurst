@@ -6,7 +6,7 @@ from typing import List
 from fastmcp import FastMCP
 from bmt import Toolkit
 import itertools
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 # Create the FastMCP server
 mcp = FastMCP("node-resolver", version="0.1.0")
