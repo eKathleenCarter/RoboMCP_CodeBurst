@@ -311,8 +311,7 @@ async def enrich_node_from_row(
     best_type = most_specific[0] if most_specific else "biolink:NamedThing"
 
     # Step 4: Get properties for this type
-    clean_type = best_type.replace("biolink:", "")
-    properties = get_node_properties_for_class.fn(clean_type)
+    properties = get_node_properties_for_class.fn(best_type)
 
     # Step 5: Map CSV columns to properties
     mapped_data = {}
