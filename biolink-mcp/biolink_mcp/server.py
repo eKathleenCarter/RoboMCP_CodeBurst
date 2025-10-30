@@ -115,5 +115,46 @@ def get_slot_range(slot_name: str) -> List[str]:
     return toolkit.get_slot_range(slot_name)
 
 
+@mcp.tool()
+def find_most_specific_types(categories: str | List[str]) -> List[str]:
+    """Find the most specific Biolink types from a list of categories
+
+    Given a list of Biolink categories, returns only the most specific ones
+    by filtering out any that are ancestors of other categories in the list.
+    This is useful for finding leaf nodes in a type hierarchy.
+
+    Args:
+        categories: A single category string or list of category strings
+
+    Returns:
+        List of most specific categories, sorted alphabetically
+    """
+    # Handle string input
+    if isinstance(categories, str):
+        categories = [categories]
+
+    # Handle empty input
+    if not categories:
+        return ['biolink:NamedThing']
+
+    # Find most specific types
+    most_specific = []
+    for biolink_type in categories:
+        is_most_specific = True
+        for other in categories:
+            if other != biolink_type:
+                # Get ancestors with reflexive=True (includes the type itself)
+                ancestors = toolkit.get_ancestors(other, reflexive=True, formatted=True, mixin=True)
+                if ancestors and biolink_type in ancestors:
+                    # biolink_type is an ancestor of other, so it's not most specific
+                    is_most_specific = False
+                    break
+        if is_most_specific:
+            most_specific.append(biolink_type)
+
+    # Return sorted list, or last category if none found
+    return sorted(most_specific) if most_specific else [categories[-1]]
+
+
 def main():
     mcp.run()
