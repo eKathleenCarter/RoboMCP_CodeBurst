@@ -19,8 +19,9 @@ async def get_normalized_nodes(
     drug_chemical_conflate: bool = True,
     description: bool = False,
     show_types: bool = True,
-    show_information_content: bool = True
-) -> str:
+    show_information_content: bool = True,
+    return_json: bool = False
+) -> str | dict:
     """Normalize biological entity CURIEs and apply conflation
 
     Args:
@@ -30,6 +31,7 @@ async def get_normalized_nodes(
         description: Whether to return CURIE descriptions when possible (default: false)
         show_types: Whether to show biolink types (default: true)
         show_information_content: Whether to show information content (default: true)
+        return_json: Return raw JSON instead of formatted string (default: false)
     """
     if not curies:
         raise ValueError("No CURIEs provided")
@@ -52,6 +54,10 @@ async def get_normalized_nodes(
     )
     response.raise_for_status()
     results = response.json()
+
+    # Return raw JSON if requested
+    if return_json:
+        return results
 
     # Build response text
     text = f"Normalized {len(curies)} CURIE(s):\n\n"
