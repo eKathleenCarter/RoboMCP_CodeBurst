@@ -1,3 +1,6 @@
+Example of using this: 
+https://claude.ai/share/243b110f-5741-4f5a-8d31-6f17ad7e688c
+
 # RoboMCP
 
 A collection of Model Context Protocol (MCP) servers providing AI assistants with access to biomedical knowledge APIs from the Translator and ROBOKOP ecosystem.
